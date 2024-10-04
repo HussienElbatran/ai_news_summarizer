@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1031564864419",
+    "project_id": "news-bdcda",
+    "storage_bucket": "news-bdcda.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031564864419:android:b0c5f4448e69cc94bac816",
+        "android_client_info": {
+          "package_name": "com.example.ai_news_summarizer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr71Ww6mG8qRezypHjoGUVHOqELU1yFc8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

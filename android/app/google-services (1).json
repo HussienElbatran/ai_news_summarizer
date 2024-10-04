@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1031564864419",
+    "project_id": "news-bdcda",
+    "storage_bucket": "news-bdcda.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031564864419:android:b0c5f4448e69cc94bac816",
+        "android_client_info": {
+          "package_name": "com.example.ai_news_summarizer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1031564864419-igg2jejj8vor19e0vjiqnmupki25noft.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr71Ww6mG8qRezypHjoGUVHOqELU1yFc8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1031564864419-igg2jejj8vor19e0vjiqnmupki25noft.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1031564864419-rumgdq5svlklu184tebo43b3ren2s56c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.aiNewsSummarizer"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
