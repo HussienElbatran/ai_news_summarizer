@@ -5,7 +5,7 @@ import 'package:hive/hive.dart';
 import '../models/article.dart';
 
 class NewsService extends ChangeNotifier {
-  final String _apiKey = 'YOUR_API_KEY_HERE'; // Replace with your actual API key
+  final String _apiKey = 'bafacaf2ea904251977030b4e299b225'; // Replace with your actual API key
   final String _baseUrl = 'https://newsapi.org/v2';
   final Box<Article> _articlesBox = Hive.box<Article>('articles');
 
