@@ -23,13 +23,14 @@ class ArticleAdapter extends TypeAdapter<Article> {
       imageUrl: fields[3] as String,
       publishedAt: fields[4] as String,
       summary: fields[5] as String?,
+      category: fields[6] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Article obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class ArticleAdapter extends TypeAdapter<Article> {
       ..writeByte(4)
       ..write(obj.publishedAt)
       ..writeByte(5)
-      ..write(obj.summary);
+      ..write(obj.summary)
+      ..writeByte(6)
+      ..write(obj.category);
   }
 
   @override

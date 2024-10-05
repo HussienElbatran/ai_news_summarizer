@@ -1,3 +1,5 @@
+// lib/models/article.dart
+
 import 'package:hive/hive.dart';
 
 part 'article.g.dart';
@@ -22,6 +24,9 @@ class Article extends HiveObject {
   @HiveField(5)
   String? summary;
 
+  @HiveField(6)
+  final String category; // New field added
+
   Article({
     required this.title,
     required this.description,
@@ -29,15 +34,18 @@ class Article extends HiveObject {
     required this.imageUrl,
     required this.publishedAt,
     this.summary,
+    required this.category, // Initialize the new field
   });
 
-  factory Article.fromJson(Map<String, dynamic> json) {
+  /// Factory method to create an Article from JSON data
+  factory Article.fromJson(Map<String, dynamic> json, String category) {
     return Article(
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       url: json['url'] ?? '',
       imageUrl: json['urlToImage'] ?? '',
       publishedAt: json['publishedAt'] ?? '',
+      category: category, // Assign the category
     );
   }
 }
