@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -5,14 +7,19 @@ import 'models/article.dart';
 import 'screens/home_screen.dart';
 import 'services/news_service.dart';
 import 'services/favorites_service.dart';
+import 'services/gemini_service.dart'; // Import the Gemini service
 import 'theme.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
+
+  // Register Hive adapters
   Hive.registerAdapter(ArticleAdapter());
+
+  // Open Hive boxes
   await Hive.openBox<Article>('articles');
-  await Hive.openBox<Article>('favorites');
+  await Hive.openBox<String>('favorites'); // Open as Box<String> for URLs
   await Hive.openBox('preferences');
 
   runApp(MyApp());
@@ -56,6 +63,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider.value(value: _newsService),
         ChangeNotifierProvider.value(value: _favoritesService),
+        ChangeNotifierProvider(create: (_) => GeminiService()), // Add GeminiService
       ],
       child: MaterialApp(
         title: 'AI News Summarizer',
