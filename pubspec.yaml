@@ -20,6 +20,7 @@ dependencies:
   google_generative_ai:  0.2.2
   image_picker: 1.0.7
   flutter_dotenv: ^5.0.2
+  intl: ^0.17.0
 
 
 dev_dependencies:
@@ -28,6 +29,31 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   hive_generator: ^2.0.0
   build_runner: ^2.3.3
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.1
+
+
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+
+flutter_native_splash:
+  color: "#000000"  # Set background color to black
+  image: assets/logo.png  # Show logo.png first
+  android: true
+  ios: true
+  fullscreen: true
+  android_12:
+    image: assets/splash.png  # Show splash.png for Android 12+
+    icon_background_color: "#000000"  # Background color for the splash on Android 12+
+  web: false
+
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logo.png
+    - assets/splash.png
+

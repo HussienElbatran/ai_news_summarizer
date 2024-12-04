@@ -14,6 +14,8 @@ class NewsService extends ChangeNotifier {
   bool _isLoading = false;
   String _error = '';
   String _category = 'general';
+  int _currentPage = 1; // Track the current page for pagination
+  List<Article> _articles = [];
 
   bool get isLoading => _isLoading;
   String get error => _error;
@@ -21,17 +23,14 @@ class NewsService extends ChangeNotifier {
 
   NewsService() {
     _loadPreferredCategory();
-    getTopHeadlines(); // Fetch headlines on initialization
   }
 
-  /// Loads the preferred news category from Hive preferences.
   void _loadPreferredCategory() {
     final prefs = Hive.box('preferences');
     _category = prefs.get('category', defaultValue: 'general');
   }
 
-  /// Fetches top headlines from the News API based on the selected category.
-  Future<void> getTopHeadlines({String? category}) async {
+  Future<void> getTopHeadlines({String? category, int page = 1}) async {
     _isLoading = true;
     _error = '';
     notifyListeners();
@@ -39,9 +38,9 @@ class NewsService extends ChangeNotifier {
     try {
       final fetchCategory = category ?? _category;
 
-      // Construct the API URL with the specified or preferred category
+      // Construct the API URL with category and page
       final url = Uri.parse(
-        '$_baseUrl/top-headlines?country=us&category=$fetchCategory&apiKey=$_apiKey',
+        '$_baseUrl/top-headlines?country=us&category=$fetchCategory&page=$page&apiKey=$_apiKey',
       );
 
       final response = await http.get(url);
@@ -50,58 +49,41 @@ class NewsService extends ChangeNotifier {
         final data = json.decode(response.body);
         final List articlesJson = data['articles'];
 
-        // **Important Changes Start Here**
-
-        // **1. Remove Clearing of Articles Box**
-        // Previously, the articles box was being cleared, which removed all stored articles,
-        // including those marked as favorites. Removing this line prevents loss of favorite articles.
-        // await _articlesBox.clear();
-
-        // **2. Store Articles with URL as Key**
-        // Instead of using `add`, which assigns an auto-incremented key, use `put` with the article's URL.
-        // This ensures each article is uniquely identified and prevents Hive errors when managing favorites.
-        for (var jsonArticle in articlesJson) {
-          final article = Article.fromJson(jsonArticle, fetchCategory);
-
-          if (article.url.isNotEmpty) {
-            await _articlesBox.put(article.url, article);
-          }
-        }
-
-        // **Important Changes End Here**
+        // Append the new articles to the existing ones
+        _articles = [..._articles, ...articlesJson.map((jsonArticle) => Article.fromJson(jsonArticle, fetchCategory)).toList()];
+        _currentPage = page; // Update the current page
       } else {
-        _error = 'Failed to load news. Status code: ${response.statusCode}';
+        _error = 'Failed to load news. Please try again later.'; // User-friendly error message
       }
     } catch (e) {
-      _error = 'Error loading news: $e';
-      if (kDebugMode) {
-        print('Error loading news: $e');
-      }
+      // Handle connection or API errors
+      _error = 'No internet connection. Please check your connection and try again.'; // User-friendly error message
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Updates the news category and fetches new headlines.
+  Future<void> refreshNews() async {
+    _articles = []; // Clear the current articles list
+    _currentPage = 1; // Reset to the first page
+    await getTopHeadlines(); // Fetch fresh news
+  }
+
+  Future<void> loadMoreArticles() async {
+    await getTopHeadlines(page: _currentPage + 1); // Fetch the next page
+  }
+
   void updateCategory(String newCategory) {
     if (_category != newCategory) {
       _category = newCategory;
-      final prefs = Hive.box('preferences');
-      prefs.put('category', newCategory);
+      _articles = []; // Clear the articles list when changing category
+      _currentPage = 1; // Reset to the first page
       getTopHeadlines(); // Fetch headlines for the new category
     }
   }
 
-  /// Retrieves articles from the 'articles' box filtered by the current category.
   List<Article> getArticles() {
-    return _articlesBox.values
-        .where((article) => article.category == _category)
-        .toList();
-  }
-
-  /// Refreshes the news by fetching the latest headlines for the current category.
-  Future<void> refreshNews() async {
-    await getTopHeadlines();
+    return _articles;
   }
 }

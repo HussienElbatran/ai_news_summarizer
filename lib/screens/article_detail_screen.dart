@@ -9,8 +9,9 @@ import '../services/gemini_service.dart'; // Import the GeminiService
 
 class ArticleDetailScreen extends StatefulWidget {
   final Article article;
+  final String selectedLanguage; // Add the selected language
 
-  const ArticleDetailScreen({Key? key, required this.article}) : super(key: key);
+  const ArticleDetailScreen({Key? key, required this.article, required this.selectedLanguage}) : super(key: key);
 
   @override
   _ArticleDetailScreenState createState() => _ArticleDetailScreenState();
@@ -18,6 +19,20 @@ class ArticleDetailScreen extends StatefulWidget {
 
 class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   bool _isSummarizing = false;
+  String _currentLanguage = ''; // Track the currently selected language
+  final List<Map<String, String>> _languages = [
+    {'code': 'en', 'name': 'English'},
+    {'code': 'ar', 'name': 'Arabic'},
+    {'code': 'fr', 'name': 'French'},
+    {'code': 'es', 'name': 'Spanish'},
+    {'code': 'zh', 'name': 'Chinese'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentLanguage = widget.selectedLanguage; // Initialize with the language passed from the previous screen
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +65,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Article Image
+            if (widget.article.imageUrl.isNotEmpty)
+              Image.network(
+                widget.article.imageUrl,
+                fit: BoxFit.cover,
+              ),
+            SizedBox(height: 16),
             // Article Title
             Text(
               widget.article.title,
@@ -58,16 +80,12 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             SizedBox(height: 8),
             // Publication Date
             Text(
-              widget.article.publishedAt,
+              widget.article.timeSincePublished,
               style: theme.textTheme.bodySmall,
             ),
             SizedBox(height: 16),
-            // Article Image
-            if (widget.article.imageUrl.isNotEmpty)
-              Image.network(
-                widget.article.imageUrl,
-                fit: BoxFit.cover,
-              ),
+            // Language Selection Dropdown
+            _buildLanguageDropdown(),
             SizedBox(height: 16),
             // Article Description
             Text(
@@ -76,14 +94,43 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
             ),
             SizedBox(height: 24),
             // Summary Section or Generate Summary Button
-            if (widget.article.summary != null &&
-                widget.article.summary!.isNotEmpty)
+            if (widget.article.summary != null && widget.article.summary!.isNotEmpty)
               _buildSummarySection(widget.article.summary!, isDarkMode)
             else
               _buildSummarizeButton(),
           ],
         ),
       ),
+    );
+  }
+
+  /// Builds the Language Selection Dropdown
+  Widget _buildLanguageDropdown() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Select Summary Language:',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        DropdownButton<String>(
+          value: _currentLanguage,
+          onChanged: (String? newLanguage) {
+            if (newLanguage != null && newLanguage != _currentLanguage) {
+              setState(() {
+                _currentLanguage = newLanguage;
+                widget.article.summary = null; // Clear existing summary
+              });
+            }
+          },
+          items: _languages.map((lang) {
+            return DropdownMenuItem<String>(
+              value: lang['code'],
+              child: Text(lang['name']!),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -102,14 +149,18 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-            border: Border.all(
-                color: isDarkMode ? Colors.grey[700]! : Colors.grey),
+            border: Border.all(color: isDarkMode ? Colors.grey[700]! : Colors.grey),
             borderRadius: BorderRadius.circular(5),
           ),
           child: Text(
             summary,
             style: TextStyle(fontSize: 14),
           ),
+        ),
+        SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () => _summarizeArticle(), // Re-summarize in selected language
+          child: Text('summarize in ${_languages.firstWhere((lang) => lang['code'] == _currentLanguage)['name']}'),
         ),
       ],
     );
@@ -140,15 +191,13 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
 
     try {
       // Access GeminiService via Provider
-      final geminiService =
-      Provider.of<GeminiService>(context, listen: false);
+      final geminiService = Provider.of<GeminiService>(context, listen: false);
 
       // Define a prompt for summarization using the article's description
-      final prompt =
-          'Summarize the following article:\n\n${widget.article.description}';
+      final prompt = 'Summarize the following article:\n\n${widget.article.description}';
 
-      // Generate summary using GeminiService
-      final summary = await geminiService.generateContent(prompt);
+      // Generate summary using GeminiService in the selected language
+      final summary = await geminiService.generateContent(prompt, _currentLanguage);
 
       setState(() {
         widget.article.summary = summary;

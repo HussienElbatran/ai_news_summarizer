@@ -14,18 +14,18 @@ class GeminiService with ChangeNotifier {
     apiKey: 'AIzaSyDL2nQUWL5jQgp9Kwo2oHtHmm-fV7574oM', // Add the same API key here
   );
 
-  /// Generates a summary based on the provided prompt.
+  /// Generates a summary based on the provided prompt and language.
   ///
   /// [prompt] - The text or URL of the news article to summarize.
+  /// [language] - The language in which the summary should be generated (e.g., 'en' for English).
   ///
   /// Returns a [String] containing the summary or an error message.
-  Future<String> generateContent(String prompt) async {
+  Future<String> generateContent(String prompt, String language) async {
     if (_apiKey.isEmpty) {
       throw Exception('API key is not set.');
     }
 
-    final systemInstructions =
-        'You are an AI assistant specialized in summarizing news articles. Provide concise, accurate, and neutral summaries without personal opinions.\n\n';
+    final systemInstructions = 'You are an AI assistant. Provide concise, accurate, and neutral summaries in $language without personal opinions.\n\n';
 
     final combinedPrompt = systemInstructions + prompt;
 

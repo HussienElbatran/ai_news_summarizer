@@ -10,7 +10,6 @@ import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
-
   const HomeScreen({Key? key, required this.onThemeChanged}) : super(key: key);
 
   @override
@@ -19,6 +18,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  String _selectedCategory = 'general'; // Hold selected category
+  String _selectedLanguage = 'en'; // Hold selected language (default English)
+  final ScrollController _scrollController = ScrollController(); // Add a ScrollController
 
   @override
   void initState() {
@@ -26,79 +28,119 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NewsService>(context, listen: false).getTopHeadlines();
     });
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent &&
+          !Provider.of<NewsService>(context, listen: false).isLoading) {
+        Provider.of<NewsService>(context, listen: false).loadMoreArticles(); // Load more articles when scrolled to bottom
+      }
+    });
   }
 
-  // No need for dispose as we're not using any controllers
+  @override
+  void dispose() {
+    _scrollController.dispose(); // Dispose the controller when screen is disposed
+    super.dispose();
+  }
 
-  // Removed _handleGenerate method
+  /// Update the selected category from settings
+  void _updateCategory(String newCategory) {
+    setState(() {
+      _selectedCategory = newCategory;
+    });
+    Provider.of<NewsService>(context, listen: false).updateCategory(newCategory);
+  }
 
-  // Removed _buildGenerateSection widget
+  /// Update the selected language from settings
+  void _updateLanguage(String newLanguage) {
+    setState(() {
+      _selectedLanguage = newLanguage;
+    });
+  }
 
-  // Updated _buildNewsList to exclude the Generate section
+  // The _buildNewsList method to display the news articles
   Widget _buildNewsList() {
     return Consumer<NewsService>(
       builder: (context, newsService, child) {
-        if (newsService.isLoading) {
+        if (newsService.isLoading && newsService.getArticles().isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
         if (newsService.error.isNotEmpty) {
-          return Center(child: Text(newsService.error));
+          return Center(child: Text(newsService.error)); // Display user-friendly error message
         }
-        final articles = newsService.getArticles();
+
+        // Apply filtering to remove articles with [Removed] in title/description or empty content
+        final articles = newsService.getArticles().where((article) {
+          return article.title.isNotEmpty &&
+              article.description.isNotEmpty &&
+              !article.title.contains('[Removed]') &&
+              !article.description.contains('[Removed]');
+        }).toList();
+
         if (articles.isEmpty) {
           return const Center(child: Text('No articles available'));
         }
 
         return RefreshIndicator(
-          onRefresh: () => newsService.refreshNews(),
+          onRefresh: () => newsService.refreshNews(), // Call the refreshNews method
           child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 80), // To ensure content is not hidden behind BottomNavigationBar
-            itemCount: articles.length, // Removed +1 as Generate section is gone
+            controller: _scrollController, // Attach the ScrollController to the ListView
+            padding: const EdgeInsets.only(bottom: 80),
+            itemCount: articles.length,
             itemBuilder: (context, index) {
               final article = articles[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  title: Text(
-                    article.title,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      Text(
-                        article.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ArticleDetailScreen(
+                        article: article,
+                        selectedLanguage: _selectedLanguage, // Pass the selected language
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        article.publishedAt,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                  leading: article.imageUrl.isNotEmpty
-                      ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      article.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
                     ),
-                  )
-                      : null,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ArticleDetailScreen(article: article),
-                      ),
-                    );
-                  },
+                  );
+                },
+                child: Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // News Image at the top
+                        if (article.imageUrl.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              article.imageUrl,
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        // Title
+                        Text(
+                          article.title,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        // Date
+                        Text(
+                          article.timeSincePublished,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        // Description
+                        Text(
+                          article.description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -108,7 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Updated _getCurrentTab to remove any dependencies on the generate section
   Widget _getCurrentTab() {
     switch (_selectedIndex) {
       case 0:
@@ -116,7 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return const FavoritesScreen();
       case 2:
-        return SettingsScreen(onThemeChanged: widget.onThemeChanged);
+        return SettingsScreen(
+          onThemeChanged: widget.onThemeChanged,
+          onCategoryChanged: _updateCategory, // Pass category callback
+          onLanguageChanged: _updateLanguage, // Pass language callback
+        );
       default:
         return _buildNewsList();
     }
@@ -130,7 +175,8 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => Provider.of<NewsService>(context, listen: false).refreshNews(),
+            onPressed: () => Provider.of<NewsService>(context, listen: false)
+                .refreshNews(),
           ),
         ],
       ),

@@ -1,10 +1,9 @@
-// lib/screens/favorites_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/article.dart';
 import '../services/favorites_service.dart';
 import 'article_detail_screen.dart';
+import 'package:hive/hive.dart';  // Add this import to retrieve the selected language
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -14,6 +13,9 @@ class FavoritesScreen extends StatelessWidget {
     return Consumer<FavoritesService>(
       builder: (context, favoritesService, child) {
         final favorites = favoritesService.getFavorites();
+
+        // Retrieve the selected language from Hive (or from a provider, if you're using one)
+        final selectedLanguage = Hive.box('preferences').get('language', defaultValue: 'en');
 
         return Scaffold(
           appBar: AppBar(
@@ -57,8 +59,10 @@ class FavoritesScreen extends StatelessWidget {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          ArticleDetailScreen(article: article),
+                      builder: (context) => ArticleDetailScreen(
+                        article: article,
+                        selectedLanguage: selectedLanguage, // Pass the selected language here
+                      ),
                     ),
                   );
                   // No need to reload favorites; Consumer will rebuild when favorites change

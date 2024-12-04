@@ -1,27 +1,20 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'models/article.dart';
 import 'screens/home_screen.dart';
+import 'models/article.dart';
 import 'services/news_service.dart';
 import 'services/favorites_service.dart';
-import 'services/gemini_service.dart'; // Import the Gemini service
+import 'services/gemini_service.dart';
 import 'theme.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
-
-  // Register Hive adapters
   Hive.registerAdapter(ArticleAdapter());
-
-  // Open Hive boxes
   await Hive.openBox<Article>('articles');
-  await Hive.openBox<String>('favorites'); // Open as Box<String> for URLs
-  await Hive.openBox('preferences');
-
+  await Hive.openBox<String>('favorites');
+  await Hive.openBox<dynamic>('preferences');
   runApp(MyApp());
 }
 
@@ -42,8 +35,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _loadThemePreference() async {
-    final prefs = Hive.box('preferences');
-    final isDarkMode = prefs.get('darkMode', defaultValue: false);
+    final prefs = Hive.box<dynamic>('preferences');
+    final isDarkMode = prefs.get('darkMode', defaultValue: false) as bool;
     setState(() {
       _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
     });
@@ -53,7 +46,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _themeMode = themeMode;
     });
-    final prefs = Hive.box('preferences');
+    final prefs = Hive.box<dynamic>('preferences');
     prefs.put('darkMode', themeMode == ThemeMode.dark);
   }
 
@@ -63,7 +56,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider.value(value: _newsService),
         ChangeNotifierProvider.value(value: _favoritesService),
-        ChangeNotifierProvider(create: (_) => GeminiService()), // Add GeminiService
+        ChangeNotifierProvider(create: (_) => GeminiService()),
       ],
       child: MaterialApp(
         title: 'AI News Summarizer',
